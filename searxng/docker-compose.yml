@@ -3,10 +3,10 @@
 # Target: SearXNG 2026.5.9-0cba32c15, localhost only
 # Usage: docker compose up -d
 # =============================================================================
-
+name: searxng
 services:
 
-  searxng:
+  core:
     image: searxng/searxng:2026.5.9-0cba32c15
     container_name: searxng
     restart: unless-stopped
@@ -16,7 +16,7 @@ services:
       - ./core-config/:/etc/searxng/:Z
       - core-data:/var/cache/searxng/
     networks:
-      - searxng-net
+      - internal
     env_file:
       - .env
     extra_hosts:
@@ -51,7 +51,7 @@ services:
     volumes:
       - valkey-data:/data/
     networks:
-      - searxng-net
+      - internal
     # No port exposed to host — internal only
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
@@ -69,7 +69,7 @@ volumes:
   valkey-data:
 
 networks:
-  searxng-net:
+  internal:
     driver: bridge
     internal: false            # SearXNG needs internet access to query engines
 
