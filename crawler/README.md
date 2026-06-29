@@ -26,3 +26,10 @@ docker compose up -d
 docker compose logs -f crw    # watch for startup errors
 ```
 
+Smoke test with:
+
+```bash
+curl -X POST http://localhost:3000/v1/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "test", "limit": 3}'
+```
