@@ -71,5 +71,5 @@ volumes:
 networks:
   internal:
     driver: bridge
-    internal: false            # SearXNG needs internet access to query engines
-
+    internal: false        # SearXNG needs internet access to query engines
+    attachable: true       # ADD THIS — allows external compose stacks to join

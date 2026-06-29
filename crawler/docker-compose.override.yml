@@ -1,0 +1,26 @@
+services:
+  searxng:
+    # Disable the bundled SearXNG entirely
+    profiles: ["disabled"]
+
+  crw:
+    # ensure network connectivity
+    networks:
+      - default             # fastcrw's own network (for Redis, etc.)
+      - searxng_internal
+    environment:
+      - CRW_SEARCH__SEARXNG_URL=http://searxng:8080
+    depends_on: !override  # remove dependency on the old searxng
+      lightpanda:
+        condition: service_started
+      chrome:
+        condition: service_started
+        required: false
+      chrome-stealth:
+        condition: service_started
+        required: false
+
+networks:
+  searxng_internal:
+    external: true          # tells compose this network already exists
+    name: searxng_internal  # must match `name: searxng` in your searxng compose
