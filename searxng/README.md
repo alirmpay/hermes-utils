@@ -5,6 +5,7 @@
 ```
 .
 ├── docker-compose.yml
+├── .env.example
 └── core-config/
     └── settings.yml          # ← your curated config
 ```
@@ -14,15 +15,10 @@
 ## 1. First-time setup
 
 ```bash
-# Create the config directory SearXNG mounts
-mkdir -p core-config
-
-# Copy settings.yml into place
-cp settings.yml core-config/settings.yml
-
+cp .env.example .env
 # Generate a strong secret key and paste it into settings.yml
 python3 -c "import secrets; print(secrets.token_hex(32))"
-# → Edit searxng/settings.yml: replace REPLACE_WITH_STRONG_RANDOM_SECRET
+# → Edit .env: replace REPLACE_WITH_STRONG_RANDOM_SECRET
 ```
 
 ---

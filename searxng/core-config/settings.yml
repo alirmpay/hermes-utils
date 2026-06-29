@@ -84,10 +84,10 @@ search:
 # ---------------------------------------------------------------------------
 server:
   # Generate a strong random value: python3 -c "import secrets; print(secrets.token_hex(32))"
-  secret_key: "your-secret-here"
-  bind_address: "127.0.0.1"   # localhost only; never expose publicly
-  port: 8080
-  base_url: "http://127.0.0.1:8080/"
+  secret_key: "${SEARXNG_SECRET_KEY}"
+  bind_address: "${SEARXNG_BIND_ADDRESS:-127.0.0.1}"   # localhost only; never expose publicly
+  port: "${SEARXNG_PORT:-8080}"
+  base_url: "${SEARXNG_BASE_URL:-http://127.0.0.1:8080/}"
   limiter: false               # no human users; skip rate-limiter overhead
   public_instance: false
   image_proxy: false           # do not proxy images

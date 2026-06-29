@@ -17,10 +17,8 @@ services:
       - core-data:/var/cache/searxng/
     networks:
       - searxng-net
-    environment:
-      - SEARXNG_BASE_URL=http://127.0.0.1:8080/
-      # If you want to override the settings path explicitly:
-      # - SEARXNG_SETTINGS_PATH=/etc/searxng/settings.yml
+    env_file:
+      - .env
     extra_hosts:
       # Allow the container to reach the SOCKS proxy running on the host.
       - "host.docker.internal:host-gateway"
