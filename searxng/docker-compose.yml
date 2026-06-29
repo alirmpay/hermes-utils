@@ -1,0 +1,77 @@
+# =============================================================================
+# docker-compose.yml — SearXNG + Valkey
+# Target: SearXNG 2026.5.9-0cba32c15, localhost only
+# Usage: docker compose up -d
+# =============================================================================
+
+services:
+
+  searxng:
+    image: searxng/searxng:2026.5.9-0cba32c15
+    container_name: searxng
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"   # bound to loopback only; never 0.0.0.0
+    volumes:
+      - ./core-config/:/etc/searxng/:Z
+      - core-data:/var/cache/searxng/
+    networks:
+      - searxng-net
+    environment:
+      - SEARXNG_BASE_URL=http://127.0.0.1:8080/
+      # If you want to override the settings path explicitly:
+      # - SEARXNG_SETTINGS_PATH=/etc/searxng/settings.yml
+    extra_hosts:
+      # Allow the container to reach the SOCKS proxy running on the host.
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      valkey:
+        condition: service_healthy
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  valkey:
+    image: valkey/valkey:9-alpine
+    container_name: valkey
+    restart: unless-stopped
+    command: >
+      valkey-server
+      --save ""
+      --appendonly no
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --loglevel warning
+    volumes:
+      - valkey-data:/data/
+    networks:
+      - searxng-net
+    # No port exposed to host — internal only
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  core-data:
+  valkey-data:
+
+networks:
+  searxng-net:
+    driver: bridge
+    internal: false            # SearXNG needs internet access to query engines
+

@@ -1,0 +1,301 @@
+# =============================================================================
+# SearXNG settings.yml — Hermes Agent / Firecrawl / localhost-only
+# Version target: 2026.5.9-0cba32c15
+# Generated: 2026-06-28
+# Strategy: curated engine list via use_default_settings + keep_only
+# Docs: https://docs.searxng.org/admin/settings/settings.html
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# use_default_settings
+# Merge strategy: keep_only pins the exact engine list; everything else in
+# this file overlays the upstream defaults so future upgrades stay safe.
+# ---------------------------------------------------------------------------
+use_default_settings:
+  engines:
+    keep_only:
+      # --- General web (primary, low rate-limit) ---
+      - qwant
+      - brave
+      - duckduckgo
+      - mwmbl                  # open-source, no CAPTCHA, fast
+      # --- General web (fallback) ---
+      - google
+      - bing
+      # --- Academic / technical (primary objective) ---
+      - arxiv
+      - pubmed
+      - semantic scholar
+      - crossref
+      - openalex               # free open-access papers API
+      # --- Code / Developer ---
+      - github
+      - github code
+      - stackoverflow
+      - mdn                    # Mozilla Developer Network
+      # --- AI / ML ---
+      - huggingface
+      - huggingface datasets
+      - huggingface spaces
+      # --- Community / forum  ---
+      - reddit
+      # --- Images only ---
+      - brave.images
+      - qwant images
+      - duckduckgo images
+      # --- News (occasional) ---
+      - brave.news
+      - qwant news
+      # --- Shopping (optional — no brave shopping exists) ---
+      # Remove or add an alternative like "google shopping" if needed
+
+
+# ---------------------------------------------------------------------------
+# General
+# ---------------------------------------------------------------------------
+general:
+  instance_name: "hermes-searxng"
+  debug: false
+  donation_url: false
+  contact_url: false
+  enable_metrics: false        # no UI; disable metrics overhead
+
+# ---------------------------------------------------------------------------
+# Search defaults
+# ---------------------------------------------------------------------------
+search:
+  safe_search: 1               # 0=off, 1=moderate, 2=strict
+  autocomplete: ""             # no autocomplete for agent use
+  autocomplete_min: 4
+  default_lang: "en"
+  ban_time_on_fail: 5          # seconds to back off a failing engine
+  max_ban_time_on_fail: 120    # cap backoff at 2 minutes
+  suspended_times:
+    SearxEngineAccessDenied: 86400    # 24 h on CAPTCHA / 403
+    SearxEngineCaptcha: 86400
+    SearxEngineTooManyRequests: 3600  # 1 h on 429
+    cf_SearxEngineAccessDenied: 86400
+  formats:
+    - json                     # agent only needs JSON
+
+
+# ---------------------------------------------------------------------------
+# Server
+# ---------------------------------------------------------------------------
+server:
+  # Generate a strong random value: python3 -c "import secrets; print(secrets.token_hex(32))"
+  secret_key: "your-secret-here"
+  bind_address: "127.0.0.1"   # localhost only; never expose publicly
+  port: 8080
+  base_url: "http://127.0.0.1:8080/"
+  limiter: false               # no human users; skip rate-limiter overhead
+  public_instance: false
+  image_proxy: false           # do not proxy images
+  method: "POST"               # POST avoids query-in-URL logging
+
+
+
+
+
+search:
+  formats:
+    - json
+
+
+# ---------------------------------------------------------------------------
+# Valkey (preferred over Redis per your requirements)
+# Matches the service name in docker-compose.yml
+# ---------------------------------------------------------------------------
+valkey:
+  url: valkey://valkey:6379/0
+
+
+# ---------------------------------------------------------------------------
+# Outgoing requests
+# ---------------------------------------------------------------------------
+outgoing:
+  request_timeout: 9.0        # seconds — generous for thorough searches
+  max_request_timeout: 15.0   # hard ceiling per engine request
+  useragent_suffix: ""
+  pool_connections: 100
+  pool_maxsize: 20
+  # Rotate between two realistic browser UA strings to reduce fingerprinting
+  # SearXNG will still randomise from its own pool; this is a floor setting.
+  enable_http2: true
+  verify: true                 # always verify TLS upstream
+  # Route outbound search requests through your SOCKS proxy.
+  # Docker host proxy:
+  # host.docker.internal:1080
+  proxies:
+    all://:
+      - socks5://host.docker.internal:1080
+
+
+# ---------------------------------------------------------------------------
+# UI (minimized — no human consumers)
+# ---------------------------------------------------------------------------
+ui:
+  static_use_hash: true
+  default_theme: simple
+  query_in_title: false
+  infinite_scroll: false
+  center_alignment: false
+  default_locale: "en"
+  results_on_new_tab: false
+  theme_args:
+    simple_style: auto
+
+
+
+# ---------------------------------------------------------------------------
+# Engine overrides
+# Fine-tune individual engines beyond what keep_only gives us.
+# ---------------------------------------------------------------------------
+engines:
+
+  # --- General web ---
+  - name: qwant
+    categories: [general, web]
+    weight: 2                  # prefer Qwant — good API, low friction
+    disabled: false
+
+  - name: brave
+    categories: [general, web]
+    weight: 2
+    disabled: false
+
+  - name: duckduckgo
+    weight: 1
+    disabled: false
+
+  - name: mwmbl
+    weight: 1
+    disabled: false
+
+  - name: google
+    weight: 1
+    disabled: false            # fallback; higher CAPTCHA risk
+
+  - name: bing
+    weight: 1
+    disabled: false            # fallback
+
+  # --- Images ---
+  - name: brave.images
+    categories: [images]
+    weight: 2
+    disabled: false
+
+  - name: qwant images
+    categories: [images]
+    weight: 2
+    disabled: false
+
+  - name: duckduckgo images
+    categories: [images]
+    weight: 1
+    disabled: false
+
+  # --- Academic ---
+  - name: arxiv
+    categories: [science]
+    weight: 3
+    disabled: false
+
+  - name: pubmed
+    categories: [science]
+    weight: 3
+    disabled: false
+
+  - name: semantic scholar
+    categories: [science]
+    weight: 2
+    disabled: false
+
+  - name: crossref
+    categories: [science]
+    weight: 2
+    disabled: false
+
+  - name: openalex
+    categories: [science]
+    weight: 2
+    disabled: false
+
+  # --- Code / Developer ---
+  - name: github
+    categories: [it]
+    weight: 3
+    disabled: false
+
+  - name: github code
+    categories: [it]
+    weight: 2
+    disabled: false
+
+  - name: stackoverflow
+    categories: [it]
+    weight: 3
+    disabled: false
+
+  - name: mdn
+    categories: [it]
+    weight: 2
+    disabled: false
+
+  # --- AI/ML ---
+  - name: huggingface
+    categories: [it, science]
+    weight: 2
+    disabled: false
+
+  # --- Community ---
+  - name: reddit
+    categories: [social media]
+    weight: 2
+    disabled: false
+
+  # --- News ---
+  - name: brave.news
+    categories: [news]
+    weight: 2
+    disabled: false
+
+  - name: qwant news
+    categories: [news]
+    weight: 2
+    disabled: false
+
+
+# ---------------------------------------------------------------------------
+# Plugins
+# Only keep plugins that add machine-readable value.
+# ---------------------------------------------------------------------------
+plugins:
+  searx.plugins.hostnames.SXNGPlugin:
+    active: true
+  searx.plugins.calculator.SXNGPlugin:
+    active: false
+  searx.plugins.hash_plugin.SXNGPlugin:
+    active: false
+  searx.plugins.self_info.SXNGPlugin:
+    active: false
+  searx.plugins.unit_converter.SXNGPlugin:
+    active: false
+  searx.plugins.tor_check.SXNGPlugin:
+    active: false
+  searx.plugins.infinite_scroll.SXNGPlugin:
+    active: false
+
+  searx.plugins.tracker_url_remover.SXNGPlugin:
+    active: false
+  searx.plugins.ahmia_filter.SXNGPlugin:
+    active: false
+  searx.plugins.oa_doi_rewrite.SXNGPlugin:
+    active: false
+
+hostnames:
+  replace:                   # deduplicate common CDN/AMP hostnames
+    '(.*\.)?amp\..*': '\1'
+  remove:
+    - '.*\.amp\.cloudflare\.com'
