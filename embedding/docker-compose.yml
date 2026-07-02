@@ -1,0 +1,28 @@
+services:
+  embed-svc:
+    # iamge: ghcr.io/alirmpay/tei-embed-svc:latest
+    build: .
+    container_name: minilm-gpu
+    ports:
+      - "8989:80"
+    volumes:
+      - hf-cache:/data
+    environment:
+      - MODEL_ID=sentence-transformers/all-MiniLM-L6-v2
+      - HF_HOME=/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:80/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  hf-cache:
