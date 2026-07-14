@@ -1,0 +1,121 @@
+services:
+  # One-shot init container: docker creates named volumes root:root mode
+  # 755, but the iii-engine image is distroless and runs as UID 65532
+  # with no `chown` of its own. Without this, /data is unwritable, the
+  # engine silently buffers in RAM, and state evaporates on every
+  # restart — the exact symptom v0.9.7's working-directory fix set out
+  # to solve. Runs once at compose-up and exits.
+
+  # ====================== CODE PROFILE ======================
+  iii-init-code:
+    image: busybox:1.36
+    user: "0:0"
+    volumes:
+      - code-data:/data
+    entrypoint: ["sh", "-c", "chown -R 65532:65532 /data && chmod 755 /data"]
+    restart: "no"
+
+  agentmemory-code:
+    # Override per-shell or via .env file:
+    #   AGENTMEMORY_III_VERSION=0.11.7 docker compose up
+    image: iiidev/iii:${AGENTMEMORY_III_VERSION:-0.11.2}
+    container_name: agentmemory-code
+    user: "65532:65532"
+    depends_on:
+      iii-init-code:
+        condition: service_completed_successfully
+    env_file:
+      - .env.common
+      - ./code.env    # profile-specific
+    ports:
+      - "3111:3111"
+      - "3113:3113"   # Viewer
+    volumes:
+      - code-data:/data
+      - ./configs/code.yaml:/app/config.yaml:ro
+    networks:
+      - llm-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ====================== GRAPH PROFILE ======================
+  iii-init-graph:
+    image: busybox:1.36
+    user: "0:0"
+    volumes:
+      - graph-data:/data
+    entrypoint: ["sh", "-c", "chown -R 65532:65532 /data && chmod 755 /data"]
+    restart: "no"
+
+  agentmemory-graph:
+    image: iiidev/iii:${AGENTMEMORY_III_VERSION:-0.11.2}
+    container_name: agentmemory-graph
+    user: "65532:65532"
+    depends_on:
+      iii-init-graph:
+        condition: service_completed_successfully
+    ports:
+      - "3112:3111"
+      - "3213:3113"
+    volumes:
+      - graph-data:/data
+      - ./configs/graph.yaml:/app/config.yaml:ro
+    env_file:
+      - .env.common
+      - ./graph.env
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - llm-network
+
+  # ====================== GENERAL PROFILE ======================
+  iii-init-general:
+    image: busybox:1.36
+    user: "0:0"
+    volumes:
+      - general-data:/data
+    entrypoint: ["sh", "-c", "chown -R 65532:65532 /data && chmod 755 /data"]
+    restart: "no"
+
+  agentmemory-general:
+    image: iiidev/iii:${AGENTMEMORY_III_VERSION:-0.11.2}
+    container_name: agentmemory-general
+    user: "65532:65532"
+    depends_on:
+      iii-init-general:
+        condition: service_completed_successfully
+    ports:
+      - "3113:3111"
+      - "3313:3113"
+    volumes:
+      - general-data:/data
+      - ./configs/general.yaml:/app/config.yaml:ro
+    env_file:
+      - .env.common
+      - general.env
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - llm-network
+
+
+volumes:
+  code-data:
+  graph-data:
+  general-data:
+
+networks:
+  llm-network:
+    external: true
