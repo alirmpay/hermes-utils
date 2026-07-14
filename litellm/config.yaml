@@ -1,0 +1,51 @@
+model_list:
+  - model_name: "*"                          # Accept any model name (pass-through for multi-profile)
+    litellm_params:
+      model: openai/*                        # Treat as OpenAI-compatible
+      api_base: "http://127.0.0.1:8080/v1"
+      api_key: "sk-no-key-required"          # llama.cpp ignores the key
+      timeout: 600                           # Long timeout for slow 7B hybrid generation
+      max_retries: 2
+
+  - model_name: embeddings
+    litellm_params:
+      model: openai/embeddings
+      api_base: "http://127.0.0.1:8989/v1"
+      api_key: "dummy"
+
+litellm_settings:
+  # === CORE PROTECTION SETTINGS ===
+  max_parallel_requests: 1                   # Strict concurrency = 1 (matches llama.cpp)
+  global_max_parallel_requests: 1            # Absolute safety net
+  request_timeout: 600                       # Overall request timeout
+
+  # Rate limiting (very conservative for GTX 980 + old CPU)
+  rpm: 3                                     # Max 3 requests per minute (adjust after testing)
+  # tpm can be left unset or set high
+  # tpm: 10000
+
+  # Drop requests only after queue is full (strong backpressure)
+  drop_params: true
+
+  # Observability
+  set_verbose: true                          # Detailed logs of lag, queuing, errors
+  json_logs: true
+
+  # Langfuse (rich traces + lag analysis)
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]
+
+  # Prometheus metrics (includes queue depth)
+  callbacks: ["prometheus"]
+
+  # Optional: Redis for stronger durability + shared rate limits
+  cache: true
+  cache_params:
+    type: redis
+    host: redis
+    port: 6379
+    # password: your-redis-password          # if you set one
+
+general_settings:
+  master_key: "sk-masterkey"                 # Simple auth key for Agentmemory
+  # database_url: ...                        # Is taken from environment
